@@ -1,0 +1,6 @@
+*.db
+*_templ.go
+
+/tmp
+
+settings.json

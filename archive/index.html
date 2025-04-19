@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Web Server</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+</head>
+<body>
+    <div class="login-container">
+      <h2>Login</h2>
+      <form
+        id="login-form"
+        hx-post="/login"
+        hx-target="body"
+        hx-target-404="#not-found"
+      >
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required />
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required />
+
+        <button type="submit">Login</button>
+      </form>
+      <button
+        id="register"
+        hx-target="#register-container"
+        hx-get="/show_register"
+        hx-swap="innerHTML"
+      >
+        Create New Login!!!
+      </button>
+    </div>
+    <div id="user-not-found"></div>
+
+    <div id="register-container"></div>
+
+    <div id="dropbox-container"></div>
+
+    <script>
+      document.body.addEventListener("user-not-found", function (evt) {
+        alertify.error("User not found!");
+      });
+
+      document.body.addEventListener("password-incorrect", function (evt) {
+        alertify.error("Incorrect Password!");
+      });
+    </script>
+  </body>
+</html>

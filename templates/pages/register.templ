@@ -1,0 +1,16 @@
+package pages
+
+import "webserver/templates/components"
+
+templ Register() {
+	<div class="login-container" style="margin-top: 20px;">
+		<h2>Register</h2>
+		<form id="register-form">
+			@components.Input("Username")
+			@components.InputWithType("Password", "password")
+			<button type="submit" hx-post="/register" hx-target="#register-container" hx-target-404="#not-found">
+				Register
+			</button>
+		</form>
+	</div>
+}

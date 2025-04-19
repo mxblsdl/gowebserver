@@ -1,0 +1,11 @@
+package components
+
+import "time"
+
+templ TimeComponent(t time.Time) {
+	<div class="time-container">
+		<h2>Current Time</h2>
+		<p>{ t.Format("January 2, 2006") }</p>
+		<p>{ t.Format("03:04:05 PM") }</p>
+	</div>
+}

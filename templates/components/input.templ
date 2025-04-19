@@ -1,0 +1,13 @@
+package components
+
+import "strings"
+
+
+templ Input(label string) {
+    @InputWithType(label, "text")
+}
+
+templ InputWithType(label, inputType string) {
+    <label for={ strings.ToLower(label)  }>{ label }</label>
+    <input type={inputType} id={strings.ToLower(label)} name={strings.ToLower(label)} required />
+}
