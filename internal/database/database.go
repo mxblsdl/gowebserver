@@ -157,7 +157,7 @@ type UserData struct {
 	PasswordHash string
 	APIKey       string
 	UserId       int
-	FolderId     int
+	FolderId     int64
 }
 
 func GetUser(username string) (UserData, error) {
@@ -178,7 +178,7 @@ func GetUser(username string) (UserData, error) {
 }
 
 func check_root(id int, userData *UserData) error {
-	var folderId int
+	var folderId int64
 	err := db.QueryRow("SELECT id FROM folders WHERE user_id = ? AND parent_folder_id IS NULL", id).Scan(&folderId)
 
 	if err == sql.ErrNoRows {
@@ -197,7 +197,7 @@ func check_root(id int, userData *UserData) error {
 			log.Printf("Error getting new folder ID: %v", err)
 			return fmt.Errorf("error getting new folder ID: %v", err)
 		}
-		folderId = int(newId)
+		folderId = newId
 
 	} else if err != nil {
 		log.Println("Error checking root folder: ", err)
