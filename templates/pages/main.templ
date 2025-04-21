@@ -7,6 +7,7 @@ type PageData struct {
 }
 
 templ Main(data PageData) {
+	<link rel="stylesheet" href="/static/css/table.css"/>
 	<input id="key" type="hidden" name="api-key" value={ data.Key }/>
 	<span class="header">
 		<!-- Insert API Key gen button -->

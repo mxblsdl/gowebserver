@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"time"
+	"webserver/internal/logger"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -14,21 +14,21 @@ import (
 var db *sql.DB
 
 func InitDB() error {
-	log.Println("Initializing the database")
+	logger.LogInfo("Initializing the database")
 	var err error
 
 	dbPath := "./auth.db"
 	db, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Printf("Failed to up database: %v\n", err)
+		logger.LogError("Failed to up database: %v\n", err)
 		return err
 	}
 
 	// Test the connection with timeout
-	log.Println("Testing database connection...")
+	logger.LogInfo("Testing database connection...")
 	err = db.Ping()
 	if err != nil {
-		log.Printf("Failed to ping database: %v", err)
+		logger.LogError("Failed to ping database: %v", err)
 		return err
 	}
 
@@ -38,7 +38,7 @@ func InitDB() error {
 	db.SetConnMaxLifetime(time.Hour)
 
 	// Create users table if it doesn't exist
-	log.Println("Creating users table if not exists...")
+	logger.LogInfo("Creating users table if not exists...")
 
 	createUserTable := `
     CREATE TABLE IF NOT EXISTS users (
@@ -50,7 +50,7 @@ func InitDB() error {
 
 	_, err = db.Exec(createUserTable)
 	if err != nil {
-		log.Printf("Failed to create table: %v", err)
+		logger.LogError("Failed to create table: %v", err)
 		return err
 	}
 
@@ -65,7 +65,7 @@ func InitDB() error {
 
 	_, err = db.Exec(createKeyTable)
 	if err != nil {
-		log.Printf("Failed to create table: %v", err)
+		logger.LogError("Failed to create table: %v", err)
 		return err
 	}
 
@@ -80,7 +80,7 @@ func InitDB() error {
 			);`
 	_, err = db.Exec(createFoldersTable)
 	if err != nil {
-		log.Printf("Failed to create table: %v", err)
+		logger.LogError("Failed to create table: %v", err)
 		return err
 	}
 
@@ -98,11 +98,11 @@ func InitDB() error {
 			);`
 	_, err = db.Exec(createFilesTable)
 	if err != nil {
-		log.Printf("Failed to create table: %v", err)
+		logger.LogError("Failed to create table: %v", err)
 		return err
 	}
 
-	log.Println("Database initialization complete")
+	logger.LogInfo("Database initialization complete")
 	return nil
 }
 
@@ -120,21 +120,22 @@ func CreateUser(username, passwordHash string) error {
 	// Start the transaction
 	tx, err := db.Begin()
 	if err != nil {
-		log.Println("Failed to begin transaction: ", err)
+		logger.LogError("Failed to begin transaction: ", err)
 		return err
 	}
 	defer tx.Rollback()
 
 	result, err := tx.Exec("INSERT INTO users(username, password_hash) VALUES(?, ?)", username, passwordHash)
 	if err != nil {
-		log.Println("Failed to insert user: ", err)
+		logger.LogError("Failed to insert user: ", err)
 		return err
 	}
 
 	// Get the user ID
 	userID, err := result.LastInsertId()
 	if err != nil {
-		return fmt.Errorf("failed to get user ID: %v", err)
+		logger.LogError("failed to get user ID: %v", err)
+		return err
 	}
 
 	// Generate and insert API key
@@ -147,7 +148,8 @@ func CreateUser(username, passwordHash string) error {
 
 	// Commit the transaction
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+		logger.LogError("failed to commit transaction: %v", err)
+		return err
 	}
 
 	return err
@@ -163,7 +165,10 @@ type UserData struct {
 func GetUser(username string) (UserData, error) {
 	var userData UserData
 	err := db.QueryRow(`
-		SELECT u.id, u.password_hash, k.key 
+		SELECT 
+		u.id, 
+		u.password_hash, 
+		k.key 
 		FROM users u 
 		LEFT JOIN keys k 
 		ON u.id = k.user_id
@@ -171,6 +176,7 @@ func GetUser(username string) (UserData, error) {
 	if err != nil {
 		return UserData{}, err
 	}
+	logger.LogInfo("User data retrieved: %v", userData)
 
 	check_root(userData.UserId, &userData)
 
@@ -189,18 +195,18 @@ func check_root(id int, userData *UserData) error {
 		VALUES(?, ?)`, id, nil, "root")
 
 		if err != nil {
-			log.Printf("Error creating root folder: %v", err)
+			logger.LogError("Error creating root folder: %v", err)
 			return fmt.Errorf("error creating root folder: %v", err)
 		}
 		newId, err := result.LastInsertId()
 		if err != nil {
-			log.Printf("Error getting new folder ID: %v", err)
+			logger.LogError("Error getting new folder ID: %v", err)
 			return fmt.Errorf("error getting new folder ID: %v", err)
 		}
 		folderId = newId
 
 	} else if err != nil {
-		log.Println("Error checking root folder: ", err)
+		logger.LogError("Error checking root folder: ", err)
 		return fmt.Errorf("error checking root folder: %v", err)
 	}
 	// Update value of folderId in userData
@@ -213,7 +219,7 @@ func UsernameExists(username string) bool {
 	var exists bool
 	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username).Scan(&exists)
 	if err != nil {
-		log.Println("Error checking username: ", err)
+		logger.LogError("Error checking username: ", err)
 		return false
 	}
 	return exists

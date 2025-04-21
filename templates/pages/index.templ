@@ -49,15 +49,17 @@ templ Index(t time.Time) {
 			></div>
 			<div id="dropbox-container"></div>
 			<script>
-				htmx.on("login", function (evt) {
+				htmx.on("login", function (e) {
 				if (e.detail.type !== "error") {
 					alertify.success(`User: ${e.detail.username} logged in successfully!`);
 				} else {
-					alertify.error(`Username: ${e.detail.username} or password is incorrect!`);
-				});
+					alertify.error(`Username: ${e.detail.username} or <password> is incorrect!`);
+				}
+			});
 
 				htmx.on("register", (e) => {
 				if (e.detail.type !== "error") {
+					console.log(e.detail);
 					alertify.success(`User: ${e.detail.username} created successfully!`);
 				} else {
 					alertify.error(`Username: ${e.detail.username} already exists!`);

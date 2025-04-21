@@ -1,4 +1,4 @@
-package handlers
+package logger
 
 import (
 	"log"
@@ -12,17 +12,21 @@ func InitLogger() {
 }
 
 func LogInfo(message string, v ...interface{}) {
-	Logger.Printf("[INFO]"+message, v...)
+	Logger.Printf("[INFO] "+message, v...)
+}
+
+func LogWarning(message string, v ...interface{}) {
+	Logger.Printf("[WARNING] "+message, v...)
 }
 
 func LogError(message string, v ...interface{}) {
-	Logger.Printf("[ERROR]"+message, v...)
+	Logger.Printf("[ERROR] "+message, v...)
 }
 
 func LogFatal(message string, v ...interface{}) {
-	Logger.Fatalf("[FATAL]"+message, v...)
+	Logger.Fatalf("[FATAL] "+message, v...)
 }
 
 func LogPanic(message string, v ...interface{}) {
-	Logger.Panicf("[PANIC]"+message, v...)
+	Logger.Panicf("[PANIC] "+message, v...)
 }

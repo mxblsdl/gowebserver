@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"webserver/internal/database"
+	"webserver/internal/logger"
 	"webserver/internal/models"
 	"webserver/templates/pages"
 
@@ -17,7 +17,7 @@ import (
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	err := pages.Index(time.Now()).Render(r.Context(), w)
 	if err != nil {
-		LogError("Error parsing template: ", err)
+		logger.LogError("Error parsing template: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -39,22 +39,24 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Username: r.FormValue("username"),
 		Password: r.FormValue("password"),
 	}
+	logger.LogInfo("Login request received for user: %s", login.Username)
 
 	user, err := database.GetUser(login.Username)
 	if err != nil {
-		w.Header().Set("HX-Trigger", `{"login" : "User not found"}`)
+		logger.LogWarning("User not found: %s", login.Username)
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"login" : {"username" : "%s", "type" : "error"}}`, login.Username))
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusNotFound)
-
 		return
 	}
 
 	// Compare password with stored hash
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(login.Password))
 	if err != nil {
+		logger.LogWarning("Incorrect password for user: %s", login.Username)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"login" : {"username" : "%s", "type" : "error"}}`, login.Username))
-		w.WriteHeader(http.StatusNotFound)
+		// w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -63,13 +65,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Key:      "placeholder",
 		FolderId: "placeholder",
 	}
+	logger.LogInfo("Logged in user: %s", login.Username)
 	err = pages.Main(data).Render(r.Context(), w)
 	if err != nil {
-		LogError("Error parsing template: ", err)
+		logger.LogError("Error parsing template: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Println("User logged in successfully")
+	logger.LogInfo("User logged in successfully: %s", login.Username)
 
 }
 
@@ -90,7 +93,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Register request received!!")
 	err := r.ParseForm()
 	if err != nil {
-		LogError("Error parsing form: ", err)
+		logger.LogError("Error parsing form: ", err)
 		return
 	}
 
@@ -101,7 +104,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	exists := database.UsernameExists(register.Username)
 	if exists {
-		log.Println("Username already exists: ", register.Username)
+		logger.LogWarning("Username already exists: %s", register.Username)
 		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"register" : {"username" : "%s", "type" : "error"}}`, register.Username))
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusNotFound)
@@ -117,11 +120,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = database.CreateUser(register.Username, register.Password)
 	if err != nil {
+		logger.LogError("Error creating user: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Println("User created successfully")
+	logger.LogInfo("User created successfully: %s", register.Username)
 	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"register" : {"username" : "%s", "type" : "success"}}`, register.Username))
 	w.Write([]byte(""))
 }

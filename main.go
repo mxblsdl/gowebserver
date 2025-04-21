@@ -5,14 +5,17 @@ import (
 	"net/http"
 	"webserver/internal/database"
 	"webserver/internal/handlers"
+	"webserver/internal/logger"
 	"webserver/internal/middleware"
 )
 
 func main() {
 	// Initialize the database
 	if err := database.InitDB(); err != nil {
-		handlers.LogFatal("Failed to initialize the database: ", err)
+		logger.LogFatal("Failed to initialize the database: ", err)
 	}
+	// Initialize the logger
+	logger.InitLogger()
 
 	mux := http.NewServeMux()
 
@@ -35,6 +38,6 @@ func main() {
 
 	// Start the server
 	if err := http.ListenAndServe(port, handler); err != nil {
-		handlers.LogFatal("Failed to server http: ", err)
+		logger.LogFatal("Failed to server http: ", err)
 	}
 }
