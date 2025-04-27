@@ -1,58 +1,73 @@
 package pages
 
+import "strconv"
+
 type PageData struct {
 	Username string
 	Key      string
-	FolderId string
+	FolderId int64
 }
 
 templ Main(data PageData) {
-	<link rel="stylesheet" href="/static/css/table.css"/>
-	<input id="key" type="hidden" name="api-key" value={ data.Key }/>
-	<span class="header">
-		<!-- Insert API Key gen button -->
-		<h2 id="greeting">Welcome { data.Username }</h2>
-		<span>
-			<button id="api-manage" hx-get="/keys/get" hx-trigger="click" hx-target="#modal-container">Manage API Keys</button>
-			<button id="api-key" hx-post="/keys/create" hx-trigger="click" hx-target="#modal-container">Generate API Key</button>
-		</span>
-	</span>
-	<h1>Drag and Drop File Upload</h1>
-	<form id="dropZone" hx-headers='{"access_token":{data.Key}}' hx-post="/upload" hx-target="#fileTable" hx-swap="innerHTML" enctype="multipart/form-data">
-		Drop files here
-	</form>
-	<h2>Uploaded Files</h2>
-	<p>
-		<div id="modal-container"></div>
-		<button hx-get="/modal/create" hx-trigger="click" hx-include="#folderId" hx-target="#modal-container">Create folder</button>
-	</p>
-	<!-- Using hidden input to store folder_id value -->
-	<input type="hidden" id="folderId" name="folder_id" value={ data.FolderId }/>
-	<form>
-		<code
-			id="filePath"
-			hx-get="/filepath"
-			hx-trigger="load, triggerPath from:body"
-			hx-include="#folderId"
-		></code>
-	</form>
-	<table>
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Size</th>
-				<th>Created At</th>
-				<th>Actions</th>
-			</tr>
-		</thead>
-		<tbody
-			id="fileTable"
-			class="items"
-			hx-get="/items"
-			hx-trigger="load, triggerItems from:body"
-			hx-swap="innerHTML"
-			hx-include="#folderId"
-			hx-on::after-request="htmx.trigger('#filePath', 'triggerPath');"
-		></tbody>
-	</table>
+	<!DOCTYPE html>
+	<html lang="en">
+		// <head>
+		// 	<meta charset="UTF-8"/>
+		// 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		// 	<title>Dashboard - { data.Username }</title>
+		// 	<link rel="stylesheet" href="/static/css/styles.css"/>
+		// 	<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+		// 	<link rel="stylesheet" href="/static/css/alertify.min.css"/>
+		// 	<script src="/static/js/alertify.min.js"></script>
+		// </head>
+		<body>
+			<input id="key" type="hidden" name="api-key" value={ data.Key }/>
+			<span class="header">
+				<!-- Insert API Key gen button -->
+				<h2 id="greeting">Welcome { data.Username }</h2>
+				<span>
+					<button id="api-manage" hx-get="/keys/get" hx-trigger="click" hx-target="#modal-container">Manage API Keys</button>
+					<button id="api-key" hx-post="/keys/create" hx-trigger="click" hx-target="#modal-container">Generate API Key</button>
+				</span>
+			</span>
+			<h1>Drag and Drop File Upload</h1>
+			<form id="dropZone" hx-headers='{"access_token":{data.Key}}' hx-post="/upload" hx-target="#fileTable" hx-swap="innerHTML" enctype="multipart/form-data">
+				Drop files here
+			</form>
+			<h2>Uploaded Files</h2>
+			<p>
+				<div id="modal-container"></div>
+				<button hx-get="/modal/create" hx-trigger="click" hx-include="#folderId" hx-target="#modal-container">Create folder</button>
+			</p>
+			<!-- Using hidden input to store folder_id value -->
+			<input type="hidden" id="folderId" name="folder_id" value={ strconv.FormatInt(data.FolderId, 10) }/>
+			<form>
+				<code
+					id="filePath"
+					hx-get="/filepath"
+					hx-trigger="load, triggerPath from:body"
+					hx-include="#folderId"
+				></code>
+			</form>
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Size</th>
+						<th>Created At</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody
+					id="fileTable"
+					class="items"
+					hx-get="/items"
+					hx-trigger="load, triggerItems from:body"
+					hx-swap="innerHTML"
+					hx-include="#folderId"
+					hx-on::after-request="htmx.trigger('#filePath', 'triggerPath');"
+				></tbody>
+			</table>
+		</body>
+	</html>
 }

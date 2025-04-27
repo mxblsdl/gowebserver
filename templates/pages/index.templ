@@ -13,13 +13,14 @@ templ Index(t time.Time) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Go Web Server</title>
 			<link rel="stylesheet" href="/static/css/styles.css"/>
+			<link rel="stylesheet" href="/static/css/table.css"/>
 			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
 			// <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 			<link rel="stylesheet" href="/static/css/alertify.min.css"/>
 			<script src="/static/js/alertify.min.js"></script>
 		</head>
 		<body>
-			@components.TimeComponent(t)
+			// @components.TimeComponent(t)
 			<div class="login-container">
 				<h2>Login</h2>
 				<form
@@ -27,6 +28,8 @@ templ Index(t time.Time) {
 					hx-post="/login"
 					hx-target="body"
 					hx-target-404="#not-found"
+					hx-swap="outerHTML transition:fade-in"
+					hx-push-url="true"
 				>
 					@components.Input("Username")
 					@components.InputWithType("Password", "password")
@@ -53,7 +56,7 @@ templ Index(t time.Time) {
 				if (e.detail.type !== "error") {
 					alertify.success(`User: ${e.detail.username} logged in successfully!`);
 				} else {
-					alertify.error(`Username: ${e.detail.username} or <password> is incorrect!`);
+					alertify.error(`Username: ${e.detail.username} or PASSWORD is incorrect!`);
 				}
 			});
 
