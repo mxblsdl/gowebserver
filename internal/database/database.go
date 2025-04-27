@@ -14,6 +14,10 @@ import (
 var db *sql.DB
 
 func InitDB() error {
+	if logger.Logger == nil {
+		return fmt.Errorf("Logger is not initialized")
+	}
+
 	logger.LogInfo("Initializing the database")
 	var err error
 
@@ -164,19 +168,21 @@ type UserData struct {
 
 func GetUser(username string) (UserData, error) {
 	var userData UserData
+	logger.LogDebug("Getting user data for username: %s", username)
 	err := db.QueryRow(`
 		SELECT 
-		u.id, 
+		CAST(u.id AS TEXT), 
 		u.password_hash, 
 		k.key 
 		FROM users u 
 		LEFT JOIN keys k 
 		ON u.id = k.user_id
-		WHERE u.username = ?`, username).Scan(&userData.PasswordHash, &userData.APIKey, &userData.UserId)
+		WHERE u.username = ?`, username).Scan(&userData.UserId, &userData.PasswordHash, &userData.APIKey)
 	if err != nil {
+		logger.LogError("Error retrieving user data: %v", err)
 		return UserData{}, err
 	}
-	logger.LogInfo("User data retrieved: %v", userData)
+	logger.LogDebug("User data retrieved: %v", userData)
 
 	check_root(userData.UserId, &userData)
 
@@ -192,7 +198,7 @@ func check_root(id int, userData *UserData) error {
 		result, err := db.Exec(`
 		INSERT INTO 
 		folders(user_id,parent_folder_id, folder_name) 
-		VALUES(?, ?)`, id, nil, "root")
+		VALUES(?, ?, ?)`, id, nil, "root")
 
 		if err != nil {
 			logger.LogError("Error creating root folder: %v", err)
