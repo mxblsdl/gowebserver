@@ -60,13 +60,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/html")
 	data := pages.PageData{
 		Username: login.Username,
-		Key:      "placeholder",
-		FolderId: "placeholder",
+		Key:      user.APIKey,
+		FolderId: user.FolderId,
 	}
+
 	logger.LogInfo("Logged in user: %s", login.Username)
 	err = pages.Main(data).Render(r.Context(), w)
+
 	if err != nil {
 		logger.LogError("Error parsing template: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -128,4 +131,15 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	logger.LogInfo("User created successfully: %s", register.Username)
 	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"register" : {"username" : "%s", "type" : "success"}}`, register.Username))
 	w.Write([]byte(""))
+}
+
+func FilePathHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO implement file path handler 
+	logger.LogInfo("File path request received")
+}
+
+
+func ItemsHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO implement items handler
+	logger.LogInfo("Items request received")
 }

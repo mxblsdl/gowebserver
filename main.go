@@ -10,12 +10,13 @@ import (
 )
 
 func main() {
+	// Initialize the logger
+	logger.InitLogger("INFO")
+
 	// Initialize the database
 	if err := database.InitDB(); err != nil {
 		logger.LogFatal("Failed to initialize the database: ", err)
 	}
-	// Initialize the logger
-	logger.InitLogger()
 
 	mux := http.NewServeMux()
 
@@ -24,6 +25,8 @@ func main() {
 	mux.Handle("/login", middleware.LoggingMiddleware(http.HandlerFunc(handlers.LoginHandler)))
 	mux.Handle("/show_register", middleware.LoggingMiddleware(http.HandlerFunc(handlers.ShowRegisterPage)))
 	mux.Handle("/register", middleware.LoggingMiddleware(http.HandlerFunc(handlers.RegisterHandler)))
+	mux.Handle("/filepath", middleware.LoggingMiddleware(http.HandlerFunc(handlers.FilePathHandler)))
+	mux.Handle("/items", middleware.LoggingMiddleware(http.HandlerFunc(handlers.ItemsHandler)))
 
 	// apply recovery middleware
 	handler := middleware.RecoveryMiddleware(mux)
