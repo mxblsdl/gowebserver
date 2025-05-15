@@ -1,17 +1,33 @@
 package logger
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
 
 var Logger *log.Logger
 
-var logLevel = "INFO"
+var logLevel string
 
-func InitLogger(level string) {
+func InitLogger(level string) error {
+	// Validate the level
+	validLevels := map[string]bool{
+		"DEBUG":   true,
+		"INFO":    true,
+		"WARNING": true,
+		"ERROR":   true,
+		"FATAL":   true,
+	}
+
+	if !validLevels[level] {
+		return fmt.Errorf("invalid log level: %s", level)
+	}
+
 	logLevel = level
 	Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
+
+	return nil
 }
 
 func shouldLog(level string) bool {

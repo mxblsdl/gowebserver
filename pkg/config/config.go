@@ -25,3 +25,16 @@ func LoadConfig() (*Config, error) {
 		Env:  env,
 	}, nil
 }
+
+var DevMode bool
+var DevUser = struct {
+	Username string
+	UserId   int
+	APIKey   string
+	FolderId int64
+}{
+	Username: "devuser",
+	UserId:   1,
+	APIKey:   "bbedfac8e64caff3f2aa7d4226d79e8e79f69c2ab4d5fa6a695e67d265cd23b2",
+	FolderId: 1,
+}

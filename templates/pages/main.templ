@@ -9,65 +9,149 @@ type PageData struct {
 }
 
 templ Main(data PageData) {
-	<!DOCTYPE html>
-	<html lang="en">
-		// <head>
-		// 	<meta charset="UTF-8"/>
-		// 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-		// 	<title>Dashboard - { data.Username }</title>
-		// 	<link rel="stylesheet" href="/static/css/styles.css"/>
-		// 	<script src="https://unpkg.com/htmx.org@2.0.4"></script>
-		// 	<link rel="stylesheet" href="/static/css/alertify.min.css"/>
-		// 	<script src="/static/js/alertify.min.js"></script>
-		// </head>
-		<body>
-			<input id="key" type="hidden" name="api-key" value={ data.Key }/>
-			<span class="header">
-				<!-- Insert API Key gen button -->
-				<h2 id="greeting">Welcome { data.Username }</h2>
-				<span>
-					<button id="api-manage" hx-get="/keys/get" hx-trigger="click" hx-target="#modal-container">Manage API Keys</button>
-					<button id="api-key" hx-post="/keys/create" hx-trigger="click" hx-target="#modal-container">Generate API Key</button>
-				</span>
+	<style>
+		#dropZone {
+		width: 300px;
+		height: 200px;
+		border: 2px dashed #ccc;
+		border-radius: 10px;
+		text-align: center;
+		line-height: 200px;
+		font-size: 20px;
+		margin: 20px auto;
+		}
+		#dropZone.dragover {
+		background-color: rgb(202, 199, 206);
+		border-color: #000;
+		transform: scale(1.02);
+		transition: all 0.3s ease;
+		}
+
+		</style>
+	<body>
+		<input id="key" type="hidden" name="api_key" value={ data.Key }/>
+		<span class="header">
+			<!-- Insert API Key gen button -->
+			<h2 id="greeting">Welcome { data.Username }</h2>
+			<span>
+				<button id="api-manage" hx-get="/keys/get" hx-trigger="click" hx-target="#modal-container">Manage API Keys</button>
+				<button id="api-key" hx-post="/keys/create" hx-trigger="click" hx-target="#modal-container">Generate API Key</button>
 			</span>
-			<h1>Drag and Drop File Upload</h1>
-			<form id="dropZone" hx-headers='{"access_token":{data.Key}}' hx-post="/upload" hx-target="#fileTable" hx-swap="innerHTML" enctype="multipart/form-data">
-				Drop files here
-			</form>
-			<h2>Uploaded Files</h2>
-			<p>
-				<div id="modal-container"></div>
-				<button hx-get="/modal/create" hx-trigger="click" hx-include="#folderId" hx-target="#modal-container">Create folder</button>
-			</p>
-			<!-- Using hidden input to store folder_id value -->
-			<input type="hidden" id="folderId" name="folder_id" value={ strconv.FormatInt(data.FolderId, 10) }/>
-			<form>
-				<code
-					id="filePath"
-					hx-get="/filepath"
-					hx-trigger="load, triggerPath from:body"
-					hx-include="#folderId"
-				></code>
-			</form>
-			<table>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Size</th>
-						<th>Created At</th>
-						<th>Actions</th>
-					</tr>
-				</thead>
-				<tbody
-					id="fileTable"
-					class="items"
-					hx-get="/items"
-					hx-trigger="load, triggerItems from:body"
-					hx-swap="innerHTML"
-					hx-include="#folderId"
-					hx-on::after-request="htmx.trigger('#filePath', 'triggerPath');"
-				></tbody>
-			</table>
-		</body>
-	</html>
+		</span>
+		<h1>Drag and Drop File Upload</h1>
+		<form
+			id="dropZone"
+			enctype="multipart/form-data"
+			ondragover="event.preventDefault(); this.classList.add('dragover');"
+			ondragleave="event.preventDefault(); this.classList.remove('dragover');"
+			ondrop="handleDrop(event);"
+		>
+			<input
+				type="file"
+				id="fileInput"
+				multiple
+				style="display:none;"
+				name="file"
+				hx-trigger="change"
+				hx-post="/upload"
+				hx-target="#fileTable"
+				hx-swap="innerHTML"
+				hx-encoding="multipart/form-data"
+			/>
+			Drop files here
+		</form>
+		<h2>Uploaded Files</h2>
+		<p>
+			<div id="modal-container"></div>
+			<button hx-get="/modal/create" hx-trigger="click" hx-include="#folderId" hx-target="#modal-container">Create folder</button>
+		</p>
+		<!-- Using hidden input to store folder_id value -->
+		<input type="hidden" id="folderId" name="folder_id" value={ strconv.FormatInt(data.FolderId, 10) }/>
+		<form>
+			<code
+				id="filePath"
+				hx-get="/filepath"
+				hx-trigger="load, triggerPath from:body"
+			></code>
+		</form>
+		<table>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Size</th>
+					<th>Created At</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody
+				id="fileTable"
+				class="items"
+				hx-get="/items"
+				hx-trigger="load, triggerItems from:body"
+				hx-swap="innerHTML"
+				hx-on::after-request="htmx.trigger('#filePath', 'triggerPath');"
+			></tbody>
+		</table>
+		<script>
+
+		// Adds api key header to all requests
+		document.body.addEventListener("htmx:configRequest", (e) => {
+			const apiKey = htmx.find("#key").getAttribute("value");
+			e.detail.headers["X-API-Key"] = apiKey;
+			const folderId = htmx.find("#folderId").getAttribute("value");
+			e.detail.headers["X-Folder-ID"] = folderId;
+		});
+
+		function handleDrop(event) {
+			event.preventDefault();
+			
+			const fileInput = htmx.find("#fileInput");
+			fileInput.files = event.dataTransfer.files;
+
+			htmx.trigger(fileInput, "change");
+		}
+
+		htmx.on("upload", function (e) {
+				if (e.detail.type !== "error") {
+					alertify.success("File successfully uploaded!");
+				} else {
+					alertify.error("Error in file upload`");
+				}
+		});
+
+		// htmx.find("#dropZone").addEventListener("drop", async (e) => {
+		// 	const files = e.dataTransfer.files;
+		// 	console.log(files);
+		// 	const folder = htmx.find("#folderId").value;
+		// 	const apiKey = htmx.find("#key").value;
+		
+		// 	const uploadPromises = Array.from(files).map(async (file) => {
+		// 	const formData = new FormData();
+		// 	// Add the file to FormData
+		// 	formData.append("file", file);
+		// 	formData.append("folder_id", folder);
+		// 	// TODO refactor here since this actually calls the upload endpoint, not HTMX
+		// 	// Form data needs a JS method to attach the data
+		// 	const response = await fetch("/upload", {
+		// 		method: "POST",
+		// 		body: formData,
+		// 		headers: {
+		// 		access_token: apiKey,
+		// 		},
+		// 	});
+		// 	if (!response.ok) {
+		// 		console.error(`Error uploading ${file.name}`, error);
+		// 	}
+		// 	});
+		// 	try {
+		// 		await Promise.all(uploadPromises);
+		// 		// triggers the update
+		// 		htmx.trigger("#fileTable", "triggerItems");
+		// 		alertify.success("File Upload Successful");
+		// 	} catch (error) {
+		// 		alertify.error("Upload Failed");
+		// 	}
+		// });
+		</script>
+	</body>
 }

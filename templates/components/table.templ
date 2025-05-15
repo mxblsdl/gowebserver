@@ -1,0 +1,82 @@
+package components
+
+import (
+	"fmt"
+	"strconv"
+	"time"
+	"webserver/internal/models"
+)
+
+templ TableComponent(items []models.Item) {
+	for _, item := range items {
+		<td>
+			if item.IsFolder() {
+				<a
+					hx-get="/items"
+					hx-target="#fileTable"
+					hx-vals={ fmt.Sprintf(`{"file_id": %d}`, item.GetID()) }
+				>
+					<img src="/static/img/folder.png" height="20px" alt="folder"/>
+					{ item.GetName() }
+				</a>
+			} else {
+				<span>{ item.GetName() }</span>
+			}
+		</td>
+		<td>{ strconv.FormatInt(item.GetSize(), 10) }</td>
+		<td>{ item.GetCreatedAt().Format(time.RFC822) }</td>
+		<td>
+			<a
+				onclick={ templ.JSFuncCall("downloadFile", item.GetID()) }
+			>Download</a>
+			<a
+				hx-delete="/delete/file"
+				hx-vals={ fmt.Sprintf(`{"file_id": %d}`, item.GetID()) }
+				hx-trigger="click"
+				hx-on::after-request="htmx.trigger('#fileTable', 'triggerItems');"
+				hx-swap="none"
+			>Delete</a>
+			<a
+				hx-post="/files/share"
+				hx-vals={ fmt.Sprintf(`{"file_id": %d}`, item.GetID()) }
+				hx-swap="none"
+				hx-on::after-request="copyToClipboard(event)"
+			>Create Link</a>
+		</td>
+	}
+	// {% endfor %} {% for file in files %}
+	// <tr>
+	//   <td>{{ file.name }}</td>
+	//   <td>{{ file.size }}</td>
+	//   <td>{{ file.created_at }}</td>
+	//   <td>
+	//     <!-- Downloading files is not natively supported by HTMX so using a JS function -->
+	//     <a onclick="downloadFile('{{file.id}}')">Download</a>
+	//     <a
+	//       hx-delete="/delete/file"
+	//       hx-vals='{"file_id": "{{ file.id }}"}'
+	//       hx-trigger="click"
+	//       hx-on::after-request="htmx.trigger('#fileTable', 'triggerItems');"
+	//       hx-swap="none"
+	//       >Delete</a
+	//     >
+	//     <a
+	//       hx-post="/files/share"
+	//       hx-vals='{"file_id": "{{ file.id }}"}'
+	//       hx-swap="none"
+	//       hx-on::after-request="copyToClipboard(event)"
+	//       >Create Link</a
+	//     >
+	//   </td>
+	// </tr>
+	// // {% endfor %}
+	// <input
+	//   type="hidden"
+	//   id="folderId"
+	//   name="folder_id"
+	//   value="{{ folder_id }}"
+	//   hx-swap-oob="true"
+	//   hx-on::after-swap="htmx.trigger('#filePath', 'triggerPath');console.log('work');"
+	// />
+	<script src="/static/js/main.js"></script>
+}
